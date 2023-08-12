@@ -1,7 +1,9 @@
 from statistics import mode
 import pandas as pd
+import numpy as np
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score,confusion_matrix
 
 csv=pd.read_csv('P2_consignment_data.csv')
@@ -27,7 +29,7 @@ df_groped=df.groupby(by=['client_id']).agg(
 df_groped['CFT_IQR']=df_groped['CFT_Percentile_75_CFT']-df_groped['CFT_Percentile_25_CFT']
 df_groped['CFT_lower_limit']=df_groped['CFT_Percentile_25_CFT']-(df_groped['CFT_IQR']*1.5)
 df_groped['CFT_upper_limit']=df_groped['CFT_Percentile_75_CFT']+(df_groped['CFT_IQR']*1.5)
-# pd.set_option('display.max_columns', None)
+pd.set_option('display.max_columns', None)
 merged_df=df_groped.merge(right=df,on='client_id',how='outer')
 
 
@@ -98,9 +100,36 @@ result['weight_outlier_percentage']=result['Total_weigth_outlier']/result['Total
 result['Flagged_outlier_percentage']=result['Total_Flagged_outlier']/result['Total_consignment']*100
 
 # print(result.head())
-print(merged_df.columns)
+
 
 
 ##--------------------------------------------------------------------------------------------------------
 merged_df['wrong_observation']=merged_df['CFT_Outlier'] | merged_df['Length_Outlier'] | merged_df['weight_Outlier'] | merged_df['fill_Outlier']
+#print(merged_df.columns)
+merged_df.drop(['Length_Outlier','weight_Outlier','fill_Outlier','CFT_Outlier','unit'],axis=1,inplace=True)
+merged_df=pd.get_dummies(merged_df)
 # print(merged_df.head())
+merged_df.replace([np.inf, -np.inf], np.nan, inplace=True)##
+
+x=merged_df.drop('wrong_observation',axis=1)
+y=merged_df['wrong_observation']
+
+x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=.2,random_state=42)
+
+xgb_classifier=XGBClassifier()
+scaler=StandardScaler()##
+x_trainScaled = scaler.fit_transform(x_train)##
+xgb_classifier.fit(x_trainScaled, y_train)
+y_pred=xgb_classifier.predict(x_test)
+
+accuracy = accuracy_score(y_test,y_pred)
+precision=precision_score(y_test,y_pred)
+recall=recall_score(y_test,y_pred)
+f1=f1_score(y_test,y_pred)
+conf=confusion_matrix(y_test,y_pred)
+
+
+print('Accuracy',round(accuracy,4))
+print('precision',round(precision,4))
+print('recall',round(recall,4))
+print('f1',round(f1,4))
