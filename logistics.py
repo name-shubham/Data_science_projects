@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 from xgboost import XGBClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
+# from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score,precision_score,recall_score,f1_score,confusion_matrix
 
 csv=pd.read_csv('P2_consignment_data.csv')
@@ -117,9 +117,9 @@ y=merged_df['wrong_observation']
 x_train,x_test,y_train,y_test=train_test_split(x,y,test_size=.2,random_state=42)
 
 xgb_classifier=XGBClassifier()
-scaler=StandardScaler()##
-x_trainScaled = scaler.fit_transform(x_train)##
-xgb_classifier.fit(x_trainScaled, y_train)
+# scaler=StandardScaler()##
+# x_trainScaled = scaler.fit_transform(x_train)##
+xgb_classifier.fit(x_train, y_train)
 y_pred=xgb_classifier.predict(x_test)
 
 accuracy = accuracy_score(y_test,y_pred)
